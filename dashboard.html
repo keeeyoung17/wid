@@ -811,21 +811,16 @@ body {
 .today-item.done-item { opacity: .45; }
 .today-item.done-item .today-title { text-decoration: line-through; }
 
-.today-check {
-  width: 18px; height: 18px; border: 2px solid var(--border);
-  border-radius: 5px; flex-shrink: 0; margin-top: 2px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; transition: all .15s;
-}
-.today-check:hover { border-color: var(--mint-500); }
-.today-check.checked { background: var(--mint-500); border-color: var(--mint-500); }
-.today-check.checked::after { content: '✓'; color: #fff; font-size: 11px; font-weight: 700; }
-
 .today-body { flex: 1; min-width: 0; }
-.today-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; flex-wrap: wrap; }
-.today-title { font-size: 14px; font-weight: 600; color: var(--navy-700); margin-bottom: 4px; letter-spacing: -.2px; }
+.today-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; flex-wrap: wrap; }
+.today-title { font-size: 14px; font-weight: 600; color: var(--navy-700); margin-bottom: 3px; letter-spacing: -.2px; }
+.today-subtask-line {
+  font-size: 12px; color: var(--navy-300); margin-bottom: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .today-strategy {
-  font-size: 12.5px; color: #7C8BA3;
-  display: flex; gap: 5px; line-height: 1.55;
+  font-size: 12px; color: #7C8BA3;
+  display: flex; gap: 5px; line-height: 1.5;
 }
 .today-strategy .ai-star { color: var(--sky-500); flex-shrink: 0; }
 .today-right {
@@ -835,6 +830,84 @@ body {
   font-size: 12px; font-weight: 700; color: var(--navy-500);
   background: var(--bg); padding: 2px 8px; border-radius: 5px;
 }
+.today-arrow {
+  font-size: 13px; color: var(--navy-300);
+}
+
+/* 오늘 할 일 팝업 */
+.today-popup-overlay {
+  display: none; position: fixed; inset: 0; z-index: 400;
+  background: rgba(15,26,46,.45); backdrop-filter: blur(3px);
+}
+.today-popup-overlay.show { display: block; }
+.today-popup {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 410; width: min(540px, calc(100vw - 32px));
+  max-height: 85vh; overflow-y: auto;
+  background: var(--card); border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(15,26,46,.22);
+  display: flex; flex-direction: column;
+}
+.tp-header {
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--card); z-index: 1;
+}
+.tp-close {
+  position: absolute; top: 16px; right: 16px;
+  width: 30px; height: 30px; border-radius: 8px;
+  border: none; background: var(--bg); color: var(--navy-500);
+  font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .12s;
+}
+.tp-close:hover { background: var(--border); color: var(--navy-900); }
+.tp-title { font-size: 17px; font-weight: 800; color: var(--navy-900); line-height: 1.35; padding-right: 36px; }
+.tp-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.tp-body { padding: 18px 22px; display: flex; flex-direction: column; gap: 16px; }
+.tp-section-label {
+  font-size: 11.5px; font-weight: 700; color: var(--navy-300);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
+}
+.tp-subtask-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.tp-subtask-row:last-child { border-bottom: none; }
+.tp-sub-check {
+  width: 18px; height: 18px; border: 2px solid var(--border);
+  border-radius: 5px; flex-shrink: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.tp-sub-check:hover { border-color: var(--mint-500); }
+.tp-sub-check.done { background: var(--mint-500); border-color: var(--mint-500); }
+.tp-sub-check.done::after { content: '✓'; color: #fff; font-size: 11px; font-weight: 700; }
+.tp-sub-name { flex: 1; font-size: 13px; color: var(--navy-700); }
+.tp-sub-name.done-text { text-decoration: line-through; color: var(--navy-300); }
+.tp-sub-meta { font-size: 11.5px; color: var(--navy-300); flex-shrink: 0; }
+.tp-ai-note {
+  background: var(--sky-100); border-radius: 8px; padding: 10px 14px;
+  font-size: 13px; color: var(--navy-700); line-height: 1.6;
+  display: flex; gap: 8px;
+}
+.tp-actions {
+  padding: 14px 22px; border-top: 1px solid var(--border);
+  display: flex; gap: 8px; flex-wrap: wrap;
+  position: sticky; bottom: 0; background: var(--card);
+}
+.tp-status-btn {
+  flex: 1; padding: 9px 12px; border-radius: 9px;
+  border: 1.5px solid var(--border); background: var(--card);
+  font-size: 13px; font-weight: 600; color: var(--navy-500);
+  cursor: pointer; transition: all .15s; min-width: 80px;
+}
+.tp-status-btn:hover { border-color: var(--sky-600); color: var(--sky-600); background: var(--sky-100); }
+.tp-status-btn.active { background: var(--sky-600); color: #fff; border-color: var(--sky-600); }
+.tp-status-btn.waiting-btn { border-color: #CBD5E1; color: #64748B; }
+.tp-status-btn.waiting-btn.active { background: #64748B; color: #fff; border-color: #64748B; }
+.tp-status-btn.done-btn { }
+.tp-status-btn.done-btn.active { background: var(--mint-500); border-color: var(--mint-500); }
+.tp-no-subtask { font-size: 13px; color: var(--navy-300); padding: 8px 0; }
 .today-footer {
   padding: 10px 20px; border-top: 1px solid #EEF1F7;
   display: flex; justify-content: space-between; align-items: center;
@@ -4949,29 +5022,36 @@ function renderTodayList(tasks, todayTasksData) {
     const h   = td.recommended_hours || 1;
     totalH   += h;
     const urg = urgClass(t);
-    // 하위일정 완료 여부 확인
-    const sub = td.subtask_id ? (t.subtasks||[]).find(s=>s.id===td.subtask_id) : null;
-    const isDone = sub ? sub.status === 'done' : t.status === 'done';
+    const isDone = t.status === 'done';
     const dl  = daysLeft(t.deadline);
-    const dlBadge = dl <= 3 ? `<span class="badge red">D-${dl}</span>`
+    const dlBadge = dl <= 0 ? `<span class="badge red">D-${dl <= 0 ? Math.abs(dl)+'초과' : dl}</span>`
+                  : dl <= 3 ? `<span class="badge red">D-${dl}</span>`
                   : dl <= 7 ? `<span class="badge amber">D-${dl}</span>`
                   :           `<span class="badge sky">D-${dl}</span>`;
     const clientCls = t.client === 'B사' ? 'b-sky' : 'navy';
+
+    // 오늘 해당 하위일정 한 줄 표시
+    const sub = td.subtask_id ? (t.subtasks||[]).find(s => s.id === td.subtask_id) : null;
+    const subLine = sub
+      ? `<div class="today-subtask-line">└ ${escHtml(sub.name)}${sub.duration_hours ? ' · '+sub.duration_hours+'h' : ''}</div>`
+      : '';
+
     return `
-    <div class="today-item ${urg} ${isDone?'done-item':''}" id="today-${idx}">
-      <div class="today-check ${isDone?'checked':''}"
-           onclick="toggleTodayItem(${idx},'${escHtml(t.id)}','${td.subtask_id||''}',this)"></div>
+    <div class="today-item ${urg} ${isDone?'done-item':''}" id="today-${idx}"
+         onclick="openTodayPopup('${escHtml(t.id)}')">
       <div class="today-body">
         <div class="today-meta">
           ${dlBadge}
-          <span class="badge ${clientCls}">${escHtml(t.client)}</span>
-          <span class="badge outline">${escHtml(t.type)}</span>
+          ${t.client ? `<span class="badge ${clientCls}">${escHtml(t.client)}</span>` : ''}
+          ${t.type   ? `<span class="badge outline">${escHtml(t.type)}</span>` : ''}
         </div>
-        <div class="today-title">${escHtml(td.title || t.title)}</div>
-        <div class="today-strategy"><span style="color:var(--sky-500)">✦</span>${escHtml(td.strategy_note || '')}</div>
+        <div class="today-title">${escHtml(t.title)}</div>
+        ${subLine}
+        ${td.strategy_note ? `<div class="today-strategy"><span class="ai-star">✦</span>${escHtml(td.strategy_note)}</div>` : ''}
       </div>
       <div class="today-right">
         <div class="today-time">${h}h</div>
+        <div class="today-arrow">›</div>
       </div>
     </div>`;
   }).join('');
@@ -4985,30 +5065,108 @@ function renderTodayList(tasks, todayTasksData) {
                : `<span class="badge red">초과 ${Math.abs(slack).toFixed(1)}h</span>`;
 }
 
-function toggleTodayItem(idx, taskId, subtaskId, checkEl) {
-  const tasks = getTasks();
-  const task  = tasks.find(t => t.id === taskId);
-  if (!task) return;
+/* ── 오늘 할 일 팝업 ── */
+let _todayPopupTaskId = null;
 
-  if (subtaskId) {
-    const sub = (task.subtasks||[]).find(s => s.id === subtaskId);
-    if (sub) sub.status = sub.status === 'done' ? 'todo' : 'done';
-  } else {
-    task.status = task.status === 'done' ? 'in_progress' : 'done';
-  }
+function openTodayPopup(taskId) {
+  _todayPopupTaskId = taskId;
+  renderTodayPopup();
+  document.getElementById('todayPopupOverlay').classList.add('show');
+  document.getElementById('todayPopup').style.display = 'flex';
+  document.getElementById('todayPopup').style.flexDirection = 'column';
+}
+
+function closeTodayPopup() {
+  document.getElementById('todayPopupOverlay').classList.remove('show');
+  document.getElementById('todayPopup').style.display = 'none';
+  _todayPopupTaskId = null;
+}
+
+function renderTodayPopup() {
+  const task = getTasks().find(t => t.id === _todayPopupTaskId);
+  if (!task) { closeTodayPopup(); return; }
+
+  // 제목
+  document.getElementById('tpTitle').textContent = task.title;
+
+  // 메타 배지
+  const dl = daysLeft(task.deadline);
+  const dlStr = task.deadline ? task.deadline.slice(5).replace('-', '/') : '—';
+  const clientCls = task.client === 'B사' ? 'b-sky' : 'navy';
+  const dlBadge = !task.deadline ? '' :
+    dl < 0  ? `<span class="badge red">D+${Math.abs(dl)} 초과</span>` :
+    dl === 0 ? `<span class="badge red">오늘 마감</span>` :
+    dl <= 3  ? `<span class="badge red">긴급 D-${dl}</span>` :
+    dl <= 7  ? `<span class="badge amber">D-${dl}</span>` :
+               `<span class="badge sky">D-${dl}</span>`;
+  document.getElementById('tpMeta').innerHTML = `
+    ${dlBadge}
+    ${task.client ? `<span class="badge ${clientCls}">${escHtml(task.client)}</span>` : ''}
+    ${task.type   ? `<span class="badge outline">${escHtml(task.type)}</span>` : ''}
+    ${task.deadline ? `<span class="badge outline">📅 ${dlStr}</span>` : ''}
+    ${task.ai_hours || task.user_hours ? `<span class="badge outline">⏱ ${task.ai_hours || task.user_hours}h</span>` : ''}
+  `;
+
+  // 본문 — 하위일정 + AI 노트
+  const subtasks = task.subtasks || [];
+  const subRows = subtasks.length
+    ? subtasks.map(s => `
+      <div class="tp-subtask-row">
+        <div class="tp-sub-check ${s.status==='done'?'done':''}"
+             onclick="toggleTodayPopupSubtask('${escHtml(task.id)}','${escHtml(s.id)}')"></div>
+        <div class="tp-sub-name ${s.status==='done'?'done-text':''}">${escHtml(s.name)}</div>
+        <div class="tp-sub-meta">${s.due_date ? s.due_date.slice(5).replace('-','/') : ''}${s.duration_hours ? ' · '+s.duration_hours+'h' : ''}</div>
+      </div>`).join('')
+    : `<div class="tp-no-subtask">하위 일정 없음</div>`;
+
+  const aiNote = task.ai_notes || task.ai_reason || '';
+  document.getElementById('tpBody').innerHTML = `
+    <div>
+      <div class="tp-section-label">하위 일정</div>
+      ${subRows}
+    </div>
+    ${aiNote ? `<div class="tp-ai-note"><span style="color:var(--sky-500);flex-shrink:0">✦</span>${escHtml(aiNote)}</div>` : ''}
+    ${task.memo ? `<div style="font-size:13px;color:var(--navy-500);line-height:1.6;white-space:pre-wrap">${escHtml(task.memo)}</div>` : ''}
+  `;
+
+  // 상태 버튼
+  document.getElementById('tpActions').innerHTML = `
+    <button class="tp-status-btn ${task.status==='in_progress'?'active':''}"
+            onclick="setTodayPopupStatus('in_progress')">진행중</button>
+    <button class="tp-status-btn waiting-btn ${task.status==='waiting'?'active':''}"
+            onclick="setTodayPopupStatus('waiting')">⏸ 대기</button>
+    <button class="tp-status-btn done-btn ${task.status==='done'?'active':''}"
+            onclick="setTodayPopupStatus('done')">완료</button>
+  `;
+}
+
+function toggleTodayPopupSubtask(taskId, subtaskId) {
+  const tasks = getTasks();
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const sub = (task.subtasks||[]).find(s => s.id === subtaskId);
+  if (!sub) return;
+  sub.status = sub.status === 'done' ? 'todo' : 'done';
   task.updated_at = new Date().toISOString();
   saveTasks(tasks);
+  renderTodayPopup();
+  renderStats(getTasks().filter(t => !t.deleted));
+}
 
-  const item = document.getElementById('today-' + idx);
-  const isDone = subtaskId
-    ? (task.subtasks||[]).find(s=>s.id===subtaskId)?.status === 'done'
-    : task.status === 'done';
-  checkEl.classList.toggle('checked', isDone);
-  item.classList.toggle('done-item', isDone);
-
-  // 리소스 즉시 재계산
-  renderStats(tasks);
-  renderTaskCards(); // 업무 탭 카드도 갱신
+function setTodayPopupStatus(status) {
+  if (!_todayPopupTaskId) return;
+  const tasks = getTasks();
+  const task = tasks.find(t => t.id === _todayPopupTaskId);
+  if (!task) return;
+  task.status = status;
+  task.updated_at = new Date().toISOString();
+  saveTasks(tasks);
+  renderTodayPopup();
+  // 업무 탭·통계도 갱신
+  renderStats(getTasks().filter(t => !t.deleted));
+  renderTaskCards();
+  const labels = { in_progress: '▶ 진행중으로 변경됐어요', waiting: '⏸ 대기 중으로 변경됐어요', done: '✓ 완료 처리됐어요' };
+  showToast(labels[status] || '상태 변경됨');
 }
 
 /* ══════════════════════════════════════
@@ -6486,6 +6644,18 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+<!-- 오늘 할 일 팝업 -->
+<div class="today-popup-overlay" id="todayPopupOverlay" onclick="closeTodayPopup()"></div>
+<div class="today-popup" id="todayPopup" style="display:none">
+  <div class="tp-header">
+    <button class="tp-close" onclick="closeTodayPopup()">✕</button>
+    <div class="tp-title" id="tpTitle"></div>
+    <div class="tp-meta" id="tpMeta"></div>
+  </div>
+  <div class="tp-body" id="tpBody"></div>
+  <div class="tp-actions" id="tpActions"></div>
+</div>
 
 <!-- 빠른 캡처 FAB -->
 <button class="quick-fab" onclick="openQuickAdd()" title="빠른 업무 추가">＋</button>
