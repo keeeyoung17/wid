@@ -2918,7 +2918,113 @@ const KEYS = {
   ROUTINES:      'prwork_routines',
   ROUTINE_DONE:  'prwork_routine_done',
   PATTERNS:      'wid_patterns',
+  VERSION:       'wid_version',
 };
+
+/* ══════════════════════════════════════
+   데이터 버전 관리 & 마이그레이션
+══════════════════════════════════════ */
+const CURRENT_VERSION = '1.0';
+
+// 버전 문자열을 숫자 배열로 비교 [major, minor]
+function _versionParts(v) {
+  return String(v || '0.0').split('.').map(Number);
+}
+function _versionLt(a, b) {
+  const [aMaj, aMin] = _versionParts(a);
+  const [bMaj, bMin] = _versionParts(b);
+  return aMaj < bMaj || (aMaj === bMaj && aMin < bMin);
+}
+
+// 마이그레이션 실패 시 자동 백업 다운로드
+function _emergencyBackup(reason) {
+  try {
+    const snapshot = {};
+    for (const key of Object.values(KEYS)) {
+      const v = localStorage.getItem(key);
+      if (v) snapshot[key] = JSON.parse(v);
+    }
+    const payload = {
+      emergency_backup: true,
+      reason,
+      saved_at: new Date().toISOString(),
+      data: snapshot,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `wid-emergency-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch (e) {
+    console.error('Emergency backup failed:', e);
+  }
+}
+
+// ── 마이그레이션 정의 ──────────────────
+// 새 버전 추가 시 여기에만 함수를 추가하면 됨.
+// 각 함수는 이전 버전 → 해당 버전으로 변환하며,
+// 오류 발생 시 throw 해야 _runMigrations가 잡아서 백업을 실행함.
+
+/*
+function migrate_v1_to_v2() {
+  // 예시: tasks에 새 필드 추가
+  const tasks = JSON.parse(localStorage.getItem(KEYS.TASKS) || '[]');
+  tasks.forEach(t => {
+    if (t.new_field === undefined) t.new_field = null;
+  });
+  localStorage.setItem(KEYS.TASKS, JSON.stringify(tasks));
+}
+*/
+
+// 마이그레이션 체인: { targetVersion, fn }
+const MIGRATIONS = [
+  // { targetVersion: '2.0', fn: migrate_v1_to_v2 },
+];
+
+function _runMigrations() {
+  const stored = localStorage.getItem(KEYS.VERSION);
+
+  // 최초 실행(버전 없음) → 현재 버전으로 초기화하고 종료
+  if (!stored) {
+    localStorage.setItem(KEYS.VERSION, CURRENT_VERSION);
+    return;
+  }
+
+  // 버전이 같으면 스킵
+  if (stored === CURRENT_VERSION) return;
+
+  // 오래된 버전이면 마이그레이션 실행
+  if (_versionLt(stored, CURRENT_VERSION)) {
+    const pending = MIGRATIONS.filter(m => _versionLt(stored, m.targetVersion));
+    if (!pending.length) {
+      // 마이그레이션 함수 없이 버전만 앞서간 경우 — 그냥 업데이트
+      localStorage.setItem(KEYS.VERSION, CURRENT_VERSION);
+      return;
+    }
+
+    for (const step of pending) {
+      try {
+        step.fn();
+        localStorage.setItem(KEYS.VERSION, step.targetVersion);
+        console.info(`[WiD] migrated to ${step.targetVersion}`);
+      } catch (err) {
+        console.error(`[WiD] migration to ${step.targetVersion} failed:`, err);
+        _emergencyBackup(`migration to ${step.targetVersion} failed: ${err.message}`);
+        // 마이그레이션 실패 안내 — init() 이후 DOM 준비 후 표시
+        window._widMigrationFailed = step.targetVersion;
+        return;
+      }
+    }
+
+    localStorage.setItem(KEYS.VERSION, CURRENT_VERSION);
+    console.info(`[WiD] all migrations complete, now at ${CURRENT_VERSION}`);
+    return;
+  }
+
+  // 저장된 버전이 현재보다 새로운 경우 (다운그레이드) — 경고만
+  console.warn(`[WiD] stored version ${stored} > current ${CURRENT_VERSION}`);
+}
 
 const DEFAULT_SETTINGS = {
   work_start:   '09:00',
@@ -3224,12 +3330,12 @@ function updateDataCount() {
    토스트 알림
 ══════════════════════════════════════ */
 let toastTimer = null;
-function showToast(msg) {
+function showToast(msg, duration = 2500) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+  toastTimer = setTimeout(() => el.classList.remove('show'), duration);
 }
 
 /* ══════════════════════════════════════
@@ -6324,6 +6430,9 @@ function saveWaitReason() {
 }
 
 function init() {
+  // 버전 체크 & 마이그레이션 (가장 먼저 실행)
+  _runMigrations();
+
   updateNavDate();
 
   // 더미 데이터 (비어 있을 때만)
@@ -6356,6 +6465,16 @@ function init() {
 
   // 대시보드 탭으로 시작
   switchTab('dashboard');
+
+  // 마이그레이션 실패 안내 (DOM 준비 후)
+  if (window._widMigrationFailed) {
+    setTimeout(() => {
+      showToast(
+        `⚠ 데이터 형식이 업데이트됐어요. 백업 파일이 저장됐으니 확인해 주세요.`,
+        6000
+      );
+    }, 800);
+  }
 }
 
 init();
