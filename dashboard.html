@@ -5030,10 +5030,20 @@ function renderTodayList(tasks, todayTasksData) {
                   :           `<span class="badge sky">D-${dl}</span>`;
     const clientCls = t.client === 'B사' ? 'b-sky' : 'navy';
 
-    // 오늘 해당 하위일정 한 줄 표시
-    const sub = td.subtask_id ? (t.subtasks||[]).find(s => s.id === td.subtask_id) : null;
-    const subLine = sub
-      ? `<div class="today-subtask-line">└ ${escHtml(sub.name)}${sub.duration_hours ? ' · '+sub.duration_hours+'h' : ''}</div>`
+    // 오늘 날짜에 해당하는 하위일정 전부 표시 (AI 추천 subtask_id 우선, 없으면 due_date 기준)
+    const today = todayStr();
+    const todaySubs = (t.subtasks || []).filter(s =>
+      s.due_date === today && s.status !== 'done'
+    );
+    // AI가 특정 subtask_id를 추천한 경우 해당 항목도 포함 (중복 제거)
+    if (td.subtask_id) {
+      const aiSub = (t.subtasks || []).find(s => s.id === td.subtask_id);
+      if (aiSub && !todaySubs.find(s => s.id === aiSub.id)) todaySubs.unshift(aiSub);
+    }
+    const subLine = todaySubs.length
+      ? todaySubs.map(s =>
+          `<div class="today-subtask-line">└ ${escHtml(s.title || '')}${s.duration_hours ? ' · ' + s.duration_hours + 'h' : ''}</div>`
+        ).join('')
       : '';
 
     return `
@@ -5114,7 +5124,7 @@ function renderTodayPopup() {
       <div class="tp-subtask-row">
         <div class="tp-sub-check ${s.status==='done'?'done':''}"
              onclick="toggleTodayPopupSubtask('${escHtml(task.id)}','${escHtml(s.id)}')"></div>
-        <div class="tp-sub-name ${s.status==='done'?'done-text':''}">${escHtml(s.name)}</div>
+        <div class="tp-sub-name ${s.status==='done'?'done-text':''}">${escHtml(s.title || '')}</div>
         <div class="tp-sub-meta">${s.due_date ? s.due_date.slice(5).replace('-','/') : ''}${s.duration_hours ? ' · '+s.duration_hours+'h' : ''}</div>
       </div>`).join('')
     : `<div class="tp-no-subtask">하위 일정 없음</div>`;
